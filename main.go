@@ -155,7 +155,7 @@ func createCall(c echo.Context) error {
 		INSERT INTO calls (
 			client_campaign_model_id, number, transcription, stage, 
 			voice_id, response_category_id, list_id, transferred, dispo_punched, timestamp
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, timestamp
 	`
 
