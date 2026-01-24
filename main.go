@@ -15,6 +15,7 @@ import (
 )
 
 type CallRequest struct {
+	CallID                *int64  `json:"call_id"` // CHANGED: Now pointer (nullable)
 	ClientCampaignModelID int     `json:"client_campaign_model_id"`
 	Number                string  `json:"number"`
 	Transcription         *string `json:"transcription"`
@@ -28,6 +29,7 @@ type CallRequest struct {
 
 type CallResponse struct {
 	ID        int       `json:"id"`
+	CallID    *int64    `json:"call_id"` // CHANGED: Now pointer (nullable)
 	Number    string    `json:"number"`
 	Timestamp time.Time `json:"timestamp"`
 	Message   string    `json:"message"`
@@ -153,9 +155,9 @@ func createCall(c echo.Context) error {
 	// Insert call
 	query := `
 		INSERT INTO calls (
-			client_campaign_model_id, number, transcription, stage, 
+			call_id, client_campaign_model_id, number, transcription, stage, 
 			voice_id, response_category_id, list_id, transferred, dispo_punched, timestamp
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, timestamp
 	`
 
@@ -164,6 +166,7 @@ func createCall(c echo.Context) error {
 
 	err := db.QueryRow(
 		query,
+		req.CallID,
 		req.ClientCampaignModelID,
 		req.Number,
 		req.Transcription,
@@ -183,6 +186,7 @@ func createCall(c echo.Context) error {
 
 	response := CallResponse{
 		ID:        callID,
+		CallID:    req.CallID,
 		Number:    req.Number,
 		Timestamp: timestamp,
 		Message:   "Call saved successfully",
@@ -309,7 +313,7 @@ func preloadCaches() {
 	}
 
 	// Preload active campaigns
-	rows, err = db.Query("SELECT id FROM client_campaign_model WHERE is_enabled = true")
+	rows, err = db.Query("SELECT id FROM client_campaign_model")
 	if err != nil {
 		log.Println("Error preloading campaigns:", err)
 	} else {
