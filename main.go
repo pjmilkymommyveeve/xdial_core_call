@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
@@ -22,6 +23,7 @@ type CallRequest struct {
 	ResponseCategoryName  *string `json:"response_category_name"`
 	ListID                *string `json:"list_id"`
 	Transferred           bool    `json:"transferred"`
+	DispoPunched          *bool   `json:"dispo_punched"`
 }
 
 type CallResponse struct {
@@ -53,6 +55,7 @@ func init() {
 }
 
 func main() {
+	godotenv.Load()
 	// Database connection from environment variables
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
@@ -151,7 +154,7 @@ func createCall(c echo.Context) error {
 	query := `
 		INSERT INTO calls (
 			client_campaign_model_id, number, transcription, stage, 
-			voice_id, response_category_id, list_id, transferred, timestamp
+			voice_id, response_category_id, list_id, transferred, dispo_punched, timestamp
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, timestamp
 	`
@@ -169,6 +172,7 @@ func createCall(c echo.Context) error {
 		responseCategoryID,
 		req.ListID,
 		req.Transferred,
+		req.DispoPunched,
 		time.Now(),
 	).Scan(&callID, &timestamp)
 
