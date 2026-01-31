@@ -15,7 +15,7 @@ import (
 )
 
 type CallRequest struct {
-	CallID                *int64  `json:"call_id"` // CHANGED: Now pointer (nullable)
+	CallID                *int64  `json:"call_id"`
 	ClientCampaignModelID int     `json:"client_campaign_model_id"`
 	Number                string  `json:"number"`
 	Transcription         *string `json:"transcription"`
@@ -25,11 +25,12 @@ type CallRequest struct {
 	ListID                *string `json:"list_id"`
 	Transferred           bool    `json:"transferred"`
 	DispoPunched          *bool   `json:"dispo_punched"`
+	ClientRow             *bool   `json:"client_row"`
 }
 
 type CallResponse struct {
 	ID        int       `json:"id"`
-	CallID    *int64    `json:"call_id"` // CHANGED: Now pointer (nullable)
+	CallID    *int64    `json:"call_id"`
 	Number    string    `json:"number"`
 	Timestamp time.Time `json:"timestamp"`
 	Message   string    `json:"message"`
@@ -152,12 +153,19 @@ func createCall(c echo.Context) error {
 		responseCategoryID = &id
 	}
 
+	// Handle client_row: if nil, use default value false
+	clientRow := false
+	if req.ClientRow != nil {
+		clientRow = *req.ClientRow
+	}
+
 	// Insert call
 	query := `
 		INSERT INTO calls (
 			call_id, client_campaign_model_id, number, transcription, stage, 
-			voice_id, response_category_id, list_id, transferred, dispo_punched, timestamp
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			voice_id, response_category_id, list_id, transferred, dispo_punched, 
+			client_row, timestamp
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id, timestamp
 	`
 
@@ -176,6 +184,7 @@ func createCall(c echo.Context) error {
 		req.ListID,
 		req.Transferred,
 		req.DispoPunched,
+		clientRow,
 		time.Now(),
 	).Scan(&callID, &timestamp)
 
